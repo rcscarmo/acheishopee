@@ -1,4 +1,6 @@
 const container = document.getElementById("produtos");
+const localidadeUsuario = detectarLocalidadeUsuario();
+const CACHE_TRADUCAO_CHAVE = "cache_traducao_produtos_v1";
 const ORDEM_MESES = [
   "janeiro",
   "fevereiro",
@@ -13,6 +15,122 @@ const ORDEM_MESES = [
   "novembro",
   "dezembro",
 ];
+
+function detectarLocalidadeUsuario() {
+  const localeBruto = (navigator.languages && navigator.languages[0]) || navigator.language || "pt-BR";
+  const localeNormalizado = localeBruto.replace("_", "-");
+  const partes = localeNormalizado.split("-");
+  const idioma = (partes[0] || "pt").toLowerCase();
+  const pais = (partes[1] || "").toUpperCase();
+
+  return {
+    locale: localeNormalizado,
+    localeLower: localeNormalizado.toLowerCase(),
+    idioma,
+    pais,
+  };
+}
+
+function determinarIdiomaDestino(localidade) {
+  const idioma = (localidade?.idioma || "pt").toLowerCase();
+  return idioma || "pt";
+}
+
+function carregarCacheTraducao() {
+  try {
+    const salvo = localStorage.getItem(CACHE_TRADUCAO_CHAVE);
+    if (!salvo) return {};
+    const parseado = JSON.parse(salvo);
+    return parseado && typeof parseado === "object" ? parseado : {};
+  } catch {
+    return {};
+  }
+}
+
+function salvarCacheTraducao(cache) {
+  try {
+    localStorage.setItem(CACHE_TRADUCAO_CHAVE, JSON.stringify(cache));
+  } catch {
+    // Ignora falhas de armazenamento (ex.: modo privado)
+  }
+}
+
+function obterNomeExibicao(produto) {
+  return produto?.nome_exibicao || produto?.nome || "";
+}
+
+async function traduzirTextoTempoReal(texto, idiomaDestino) {
+  if (!texto || idiomaDestino === "pt") {
+    return texto;
+  }
+
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(texto)}&langpair=pt|${encodeURIComponent(
+    idiomaDestino
+  )}`;
+
+  const resposta = await fetch(url);
+  if (!resposta.ok) {
+    throw new Error(`Falha de traducao (${resposta.status})`);
+  }
+
+  const dados = await resposta.json();
+  const traducao = dados?.responseData?.translatedText;
+  return typeof traducao === "string" && traducao.trim() ? traducao : texto;
+}
+
+async function aplicarTraducaoNosProdutos(dados, idiomaDestino) {
+  if (idiomaDestino === "pt") {
+    return dados;
+  }
+
+  const cache = carregarCacheTraducao();
+  const cacheAtualizado = { ...cache };
+  const promessasUnicas = new Map();
+
+  Object.keys(dados).forEach((mes) => {
+    (dados[mes] || []).forEach((produto) => {
+      const nomeOriginal = produto?.nome || "";
+      if (!nomeOriginal) {
+        produto.nome_exibicao = "";
+        return;
+      }
+
+      const chave = `${idiomaDestino}::${nomeOriginal}`;
+      const emCache = cacheAtualizado[chave];
+
+      if (emCache) {
+        produto.nome_exibicao = emCache;
+        return;
+      }
+
+      if (!promessasUnicas.has(chave)) {
+        promessasUnicas.set(
+          chave,
+          traduzirTextoTempoReal(nomeOriginal, idiomaDestino).catch(() => nomeOriginal)
+        );
+      }
+    });
+  });
+
+  const entradas = Array.from(promessasUnicas.entries());
+  await Promise.all(
+    entradas.map(async ([chave, promessa]) => {
+      const traduzido = await promessa;
+      cacheAtualizado[chave] = traduzido;
+    })
+  );
+
+  Object.keys(dados).forEach((mes) => {
+    (dados[mes] || []).forEach((produto) => {
+      const nomeOriginal = produto?.nome || "";
+      const chave = `${idiomaDestino}::${nomeOriginal}`;
+      produto.nome_exibicao = cacheAtualizado[chave] || nomeOriginal;
+    });
+  });
+
+  salvarCacheTraducao(cacheAtualizado);
+  return dados;
+}
 
 function normalizarMes(valor) {
   return valor
@@ -31,15 +149,17 @@ function ordenarMeses(meses) {
   });
 }
 
-function ordenarProdutos(produtos) {
+function ordenarProdutos(produtos, localidade) {
+  const idiomaDestino = determinarIdiomaDestino(localidade);
   return [...produtos].sort((a, b) => {
-    const nomeA = a?.nome || "";
-    const nomeB = b?.nome || "";
-    return nomeA.localeCompare(nomeB, "pt-BR", { sensitivity: "base" });
+    const nomeA = obterNomeExibicao(a);
+    const nomeB = obterNomeExibicao(b);
+    return nomeA.localeCompare(nomeB, idiomaDestino, { sensitivity: "base" });
   });
 }
 
-function criarCardProduto(produto) {
+function criarCardProduto(produto, localidade) {
+  const nomeExibicao = obterNomeExibicao(produto);
   const a = document.createElement("a");
   a.className = "link-item";
   a.href = produto.link_afiliado;
@@ -49,11 +169,11 @@ function criarCardProduto(produto) {
   const icone = document.createElement("img");
   icone.className = "icone";
   icone.src = produto.icone || "https://via.placeholder.com/72x72.png?text=%F0%9F%9B%8D%EF%B8%8F";
-  icone.alt = `Icone ${produto.nome}`;
+  icone.alt = `Icone ${nomeExibicao}`;
 
   const nome = document.createElement("span");
   nome.className = "nome";
-  nome.textContent = produto.nome;
+  nome.textContent = nomeExibicao;
 
   const conteudo = document.createElement("div");
   conteudo.className = "conteudo";
@@ -111,11 +231,11 @@ function renderizarProdutosPorMes(dados) {
       lista.hidden = !proximoEstado;
     });
 
-    const produtosOrdenados = ordenarProdutos(dados[mes] || []);
+    const produtosOrdenados = ordenarProdutos(dados[mes] || [], localidadeUsuario);
 
     produtosOrdenados.forEach((produto) => {
       if (produto?.nome && produto?.link_afiliado) {
-        lista.appendChild(criarCardProduto(produto));
+        lista.appendChild(criarCardProduto(produto, localidadeUsuario));
       }
     });
 
@@ -134,6 +254,8 @@ function renderizarProdutosPorMes(dados) {
 
 async function carregarProdutos() {
   try {
+    container.innerHTML = '<p class="vazio">Carregando produtos...</p>';
+
     const resposta = await fetch("produtos.json");
 
     if (!resposta.ok) {
@@ -141,7 +263,10 @@ async function carregarProdutos() {
     }
 
     const dados = await resposta.json();
-    renderizarProdutosPorMes(dados);
+    const idiomaDestino = determinarIdiomaDestino(localidadeUsuario);
+    const dadosTraduzidos = await aplicarTraducaoNosProdutos(dados, idiomaDestino);
+    container.innerHTML = "";
+    renderizarProdutosPorMes(dadosTraduzidos);
   } catch (erro) {
     container.innerHTML = `<p class="erro">Erro ao carregar produtos: ${erro.message}</p>`;
   }
