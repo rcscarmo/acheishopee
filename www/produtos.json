@@ -1,0 +1,30 @@
+{
+  "março": [
+    {
+      "icone": "https://cdn-icons-png.flaticon.com/512/2331/2331970.png",
+      "nome": "Produto W",
+      "link_afiliado": "https://exemplo.com/afiliado/produto-w",
+      "novo": true
+    }
+  ],
+  "janeiro": [
+    {
+      "icone": "https://cdn-icons-png.flaticon.com/512/1040/1040230.png",
+      "nome": "Produto X",
+      "link_afiliado": "https://exemplo.com/afiliado/produto-x",
+      "novo": true
+    },
+    {
+      "icone": "https://cdn-icons-png.flaticon.com/512/2921/2921822.png",
+      "nome": "Produto Y",
+      "link_afiliado": "https://exemplo.com/afiliado/produto-y"
+    }
+  ],
+  "fevereiro": [
+    {
+      "icone": "https://cdn-icons-png.flaticon.com/512/3144/3144456.png",
+      "nome": "Produto Z",
+      "link_afiliado": "https://exemplo.com/afiliado/produto-z"
+    }
+  ]
+}
