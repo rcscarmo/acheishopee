@@ -1,30 +1,42 @@
 {
-  "março": [
-    {
-      "icone": "https://cdn-icons-png.flaticon.com/512/2331/2331970.png",
-      "nome": "Produto W",
-      "link_afiliado": "https://exemplo.com/afiliado/produto-w",
-      "novo": true
-    }
-  ],
-  "janeiro": [
-    {
-      "icone": "https://cdn-icons-png.flaticon.com/512/1040/1040230.png",
-      "nome": "Produto X",
-      "link_afiliado": "https://exemplo.com/afiliado/produto-x",
-      "novo": true
-    },
-    {
-      "icone": "https://cdn-icons-png.flaticon.com/512/2921/2921822.png",
-      "nome": "Produto Y",
-      "link_afiliado": "https://exemplo.com/afiliado/produto-y"
-    }
-  ],
+  "março": [],
+  "janeiro": [],
   "fevereiro": [
     {
-      "icone": "https://cdn-icons-png.flaticon.com/512/3144/3144456.png",
-      "nome": "Produto Z",
-      "link_afiliado": "https://exemplo.com/afiliado/produto-z"
+      "icone": "https://down-tx-br.img.susercontent.com/br-11134207-81z1k-mfrvxdr9i96v11.webp",
+      "nome": "Jogo De Chave Catraca Caixa De Ferramentas Completa Reversível",
+      "link_afiliado": "https://s.shopee.com.br/9zsCxoABBs",
+      "novo": false
+    },
+    {
+      "icone": "https://down-tx-br.img.susercontent.com/sg-11134201-7rbk1-lnvjkyuwq1fs3e.webp",
+      "nome": "Sombrinha Guarda Chuva Dupla Face Colorida Liso Proteção contra Raios UV Contra Vento",
+      "link_afiliado": "https://s.shopee.com.br/9fFMZJhomi",
+      "novo": false
+    },
+    {
+      "icone": "https://down-tx-br.img.susercontent.com/sg-11134201-7reoo-m8uns1iu3kx370.webp",
+      "nome": "Bolsa Térmica De Grande Capacidade De Alta Qualidade Adequada Para Viagens De Piquenique Na Praia",
+      "link_afiliado": "https://s.shopee.com.br/5AmxD7wiu9",
+      "novo": false
+    },
+    {
+      "icone": "https://down-tx-br.img.susercontent.com/br-11134207-7r98o-mbxi2wd1amvtfc.webp",
+      "nome": "Cozedor De Ovos Portátil Elétrico Cozinha A Vapor",
+      "link_afiliado": "https://s.shopee.com.br/7fUIBkzjcY",
+      "novo": false
+    },
+    {
+      "icone": "https://down-tx-br.img.susercontent.com/sg-11134201-824j2-mej1dpheg6pubc.webp",
+      "nome": "Fita Dupla Face Extra Forte Transparente NanoGel Silicone Mágica Adesiva Cola na Parede",
+      "link_afiliado": "https://s.shopee.com.br/5L6NPWgSym",
+      "novo": false
+    },
+    {
+      "icone": "https://down-tx-br.img.susercontent.com/br-11134207-7r98o-mdn5xvzwinrl9c.webp",
+      "nome": "Kit Pote de Vidro Hermético Retangular 10 / 5 Unid Travas Marmita Fit Microondas Mantimentos",
+      "link_afiliado": "https://s.shopee.com.br/5VPnbtn5Gj",
+      "novo": false
     }
   ]
 }

@@ -31,6 +31,14 @@ function ordenarMeses(meses) {
   });
 }
 
+function ordenarProdutos(produtos) {
+  return [...produtos].sort((a, b) => {
+    const nomeA = a?.nome || "";
+    const nomeB = b?.nome || "";
+    return nomeA.localeCompare(nomeB, "pt-BR", { sensitivity: "base" });
+  });
+}
+
 function criarCardProduto(produto) {
   const a = document.createElement("a");
   a.className = "link-item";
@@ -103,7 +111,9 @@ function renderizarProdutosPorMes(dados) {
       lista.hidden = !proximoEstado;
     });
 
-    (dados[mes] || []).forEach((produto) => {
+    const produtosOrdenados = ordenarProdutos(dados[mes] || []);
+
+    produtosOrdenados.forEach((produto) => {
       if (produto?.nome && produto?.link_afiliado) {
         lista.appendChild(criarCardProduto(produto));
       }
