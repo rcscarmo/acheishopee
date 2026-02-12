@@ -1,8 +1,11 @@
 const container = document.getElementById("produtos");
 const buscaInput = document.getElementById("busca-produto");
+const contadorAcessosEl = document.getElementById("contador-acessos");
+const agradecimentoVisitaEl = document.getElementById("agradecimento-visita");
 const ultimaAtualizacaoEl = document.getElementById("ultima-atualizacao");
 const localidadeUsuario = detectarLocalidadeUsuario();
 const CACHE_TRADUCAO_CHAVE = "cache_traducao_produtos_v1";
+const VISITAS_CHAVE = "contador_visitas_local_v1";
 const TEXTOS_PADRAO_UI = {
   mostrar: "Mostrar",
   esconder: "Esconder",
@@ -19,6 +22,8 @@ const TEXTOS_PADRAO_UI = {
   ultimaAtualizacao: "Última atualização",
   erroCarregar: "Erro ao carregar produtos",
   schemaNome: "Produtos recomendados e ofertas",
+  contadorAcessosLabel: "Acessos neste dispositivo",
+  agradecimentoVisita: "Obrigado pela visita.",
 };
 let textosUI = { ...TEXTOS_PADRAO_UI };
 let dadosProdutosAtuais = {};
@@ -123,6 +128,26 @@ function atualizarIndicadorAtualizacao(dataReferencia = new Date()) {
     timeStyle: "short",
   }).format(dataReferencia);
   ultimaAtualizacaoEl.textContent = `${t("ultimaAtualizacao")}: ${dataFormatada}`;
+}
+
+function atualizarContadorEAgradecimento() {
+  let visitas = 0;
+  try {
+    const atual = Number(localStorage.getItem(VISITAS_CHAVE) || "0");
+    visitas = Number.isFinite(atual) ? atual + 1 : 1;
+    localStorage.setItem(VISITAS_CHAVE, String(visitas));
+  } catch {
+    visitas = 1;
+  }
+
+  if (contadorAcessosEl) {
+    const valorFormatado = new Intl.NumberFormat(localidadeUsuario.locale || "pt-BR").format(visitas);
+    contadorAcessosEl.textContent = `${t("contadorAcessosLabel")}: ${valorFormatado}`;
+  }
+
+  if (agradecimentoVisitaEl) {
+    agradecimentoVisitaEl.textContent = t("agradecimentoVisita");
+  }
 }
 
 async function traduzirTextoTempoReal(texto, idiomaDestino) {
@@ -511,6 +536,7 @@ async function carregarProdutos() {
     adicionarJsonLd(dadosProdutosAtuais);
     configurarBusca();
     atualizarIndicadorAtualizacao(new Date());
+    atualizarContadorEAgradecimento();
   } catch (erro) {
     container.innerHTML = `<p class="erro">${t("erroCarregar")}: ${erro.message}</p>`;
   }
