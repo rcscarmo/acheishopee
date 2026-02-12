@@ -26,7 +26,7 @@ const TEXTOS_PADRAO_UI = {
   contadorAcessosLabel: "Acessos neste dispositivo",
   agradecimentoVisita: "Obrigado pela visita.",
   recomendadoDiaTitulo: "Recomendado do dia",
-  recomendadoDiaTexto: "Escolha selecionada automaticamente para hoje.",
+  recomendadoDiaTexto: "Escolha selecionada para hoje.",
 };
 let textosUI = { ...TEXTOS_PADRAO_UI };
 let dadosProdutosAtuais = {};
