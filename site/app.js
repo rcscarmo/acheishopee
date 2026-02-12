@@ -1,7 +1,26 @@
 const container = document.getElementById("produtos");
 const buscaInput = document.getElementById("busca-produto");
+const ultimaAtualizacaoEl = document.getElementById("ultima-atualizacao");
 const localidadeUsuario = detectarLocalidadeUsuario();
 const CACHE_TRADUCAO_CHAVE = "cache_traducao_produtos_v1";
+const TEXTOS_PADRAO_UI = {
+  mostrar: "Mostrar",
+  esconder: "Esconder",
+  verOferta: "Ver oferta",
+  novo: "Novo",
+  iconePrefixo: "Icone",
+  linkSeguro: "Link seguro",
+  destinoPrefixo: "Destino",
+  linkExternoSeguro: "Link externo seguro",
+  nenhumProdutoMes: "Nenhum produto neste mes.",
+  nenhumNoJson: "Nenhum produto encontrado no JSON.",
+  nenhumBusca: "Nenhum produto encontrado para essa busca.",
+  carregando: "Carregando produtos...",
+  ultimaAtualizacao: "Última atualização",
+  erroCarregar: "Erro ao carregar produtos",
+  schemaNome: "Produtos recomendados e ofertas",
+};
+let textosUI = { ...TEXTOS_PADRAO_UI };
 let dadosProdutosAtuais = {};
 const ORDEM_MESES = [
   "janeiro",
@@ -17,6 +36,20 @@ const ORDEM_MESES = [
   "novembro",
   "dezembro",
 ];
+const MAPA_MES_PARA_INDICE = {
+  janeiro: 0,
+  fevereiro: 1,
+  marco: 2,
+  abril: 3,
+  maio: 4,
+  junho: 5,
+  julho: 6,
+  agosto: 7,
+  setembro: 8,
+  outubro: 9,
+  novembro: 10,
+  dezembro: 11,
+};
 
 function detectarLocalidadeUsuario() {
   const localeBruto = (navigator.languages && navigator.languages[0]) || navigator.language || "pt-BR";
@@ -36,6 +69,10 @@ function detectarLocalidadeUsuario() {
 function determinarIdiomaDestino(localidade) {
   const idioma = (localidade?.idioma || "pt").toLowerCase();
   return idioma || "pt";
+}
+
+function t(chave) {
+  return textosUI[chave] || TEXTOS_PADRAO_UI[chave] || chave;
 }
 
 function carregarCacheTraducao() {
@@ -61,6 +98,24 @@ function obterNomeExibicao(produto) {
   return produto?.nome_exibicao || produto?.nome || "";
 }
 
+function extrairDominio(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+function atualizarIndicadorAtualizacao(dataReferencia = new Date()) {
+  if (!ultimaAtualizacaoEl) return;
+  const dataFormatada = new Intl.DateTimeFormat(localidadeUsuario.locale || "pt-BR", {
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(dataReferencia);
+  ultimaAtualizacaoEl.textContent = `${t("ultimaAtualizacao")}: ${dataFormatada}`;
+}
+
 async function traduzirTextoTempoReal(texto, idiomaDestino) {
   if (!texto || idiomaDestino === "pt") {
     return texto;
@@ -78,6 +133,90 @@ async function traduzirTextoTempoReal(texto, idiomaDestino) {
   const dados = await resposta.json();
   const traducao = dados?.responseData?.translatedText;
   return typeof traducao === "string" && traducao.trim() ? traducao : texto;
+}
+
+async function traduzirComCache(texto, idiomaDestino) {
+  if (!texto || idiomaDestino === "pt") {
+    return texto;
+  }
+
+  const cache = carregarCacheTraducao();
+  const chave = `${idiomaDestino}::${texto}`;
+  if (cache[chave]) {
+    return cache[chave];
+  }
+
+  const traduzido = await traduzirTextoTempoReal(texto, idiomaDestino).catch(() => texto);
+  cache[chave] = traduzido;
+  salvarCacheTraducao(cache);
+  return traduzido;
+}
+
+async function prepararTextosUI(idiomaDestino) {
+  if (idiomaDestino === "pt") {
+    textosUI = { ...TEXTOS_PADRAO_UI };
+    return;
+  }
+
+  const entradas = Object.entries(TEXTOS_PADRAO_UI);
+  const traduzidos = await Promise.all(
+    entradas.map(async ([chave, valor]) => [chave, await traduzirComCache(valor, idiomaDestino)])
+  );
+
+  textosUI = Object.fromEntries(traduzidos);
+}
+
+async function traduzirTextosEstaticosDaPagina(idiomaDestino) {
+  if (idiomaDestino === "pt") {
+    return;
+  }
+
+  const raiz = document.querySelector("main.container");
+  if (!raiz) return;
+
+  const nosTexto = [];
+  const walker = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const no = walker.currentNode;
+    if (!no || !no.nodeValue) continue;
+    if (no.parentElement && no.parentElement.closest("#produtos")) continue;
+    const valor = no.nodeValue.trim();
+    if (!valor) continue;
+    nosTexto.push(no);
+  }
+
+  const atributos = ["placeholder", "aria-label", "title"];
+  const nosAtributos = [];
+  raiz.querySelectorAll("*").forEach((el) => {
+    if (el.closest("#produtos")) return;
+    atributos.forEach((atributo) => {
+      const valor = el.getAttribute(atributo);
+      if (valor && valor.trim()) {
+        nosAtributos.push({ el, atributo, valor });
+      }
+    });
+  });
+
+  const textosUnicos = new Set();
+  nosTexto.forEach((no) => textosUnicos.add(no.nodeValue.trim()));
+  nosAtributos.forEach((item) => textosUnicos.add(item.valor.trim()));
+
+  const mapaTraducao = {};
+  await Promise.all(
+    Array.from(textosUnicos).map(async (textoOriginal) => {
+      mapaTraducao[textoOriginal] = await traduzirComCache(textoOriginal, idiomaDestino);
+    })
+  );
+
+  nosTexto.forEach((no) => {
+    const original = no.nodeValue.trim();
+    no.nodeValue = mapaTraducao[original] || no.nodeValue;
+  });
+
+  nosAtributos.forEach(({ el, atributo, valor }) => {
+    const original = valor.trim();
+    el.setAttribute(atributo, mapaTraducao[original] || valor);
+  });
 }
 
 async function aplicarTraducaoNosProdutos(dados, idiomaDestino) {
@@ -106,10 +245,7 @@ async function aplicarTraducaoNosProdutos(dados, idiomaDestino) {
       }
 
       if (!promessasUnicas.has(chave)) {
-        promessasUnicas.set(
-          chave,
-          traduzirTextoTempoReal(nomeOriginal, idiomaDestino).catch(() => nomeOriginal)
-        );
+        promessasUnicas.set(chave, traduzirTextoTempoReal(nomeOriginal, idiomaDestino).catch(() => nomeOriginal));
       }
     });
   });
@@ -141,6 +277,23 @@ function normalizarMes(valor) {
     .toLowerCase();
 }
 
+function traduzirNomeMes(mes, localidade) {
+  const indiceMes = MAPA_MES_PARA_INDICE[normalizarMes(mes)];
+  if (indiceMes === undefined) {
+    return mes;
+  }
+
+  try {
+    const formatter = new Intl.DateTimeFormat(localidade?.locale || "pt-BR", {
+      month: "long",
+      timeZone: "UTC",
+    });
+    return formatter.format(new Date(Date.UTC(2024, indiceMes, 1)));
+  } catch {
+    return mes;
+  }
+}
+
 function ordenarMeses(meses) {
   return [...meses].sort((a, b) => {
     const aIndex = ORDEM_MESES.indexOf(normalizarMes(a));
@@ -162,17 +315,18 @@ function ordenarProdutos(produtos, localidade) {
 
 function criarCardProduto(produto, localidade) {
   const nomeExibicao = obterNomeExibicao(produto);
+  const dominioDestino = extrairDominio(produto.link_afiliado);
   const a = document.createElement("a");
   a.className = "link-item";
   a.href = produto.link_afiliado;
   a.target = "_blank";
   a.rel = "noopener noreferrer sponsored";
-  a.title = `Ver oferta de ${nomeExibicao}`;
+  a.title = `${t("verOferta")}: ${nomeExibicao}`;
 
   const icone = document.createElement("img");
   icone.className = "icone";
   icone.src = produto.icone || "https://via.placeholder.com/72x72.png?text=%F0%9F%9B%8D%EF%B8%8F";
-  icone.alt = `Icone ${nomeExibicao}`;
+  icone.alt = `${t("iconePrefixo")} ${nomeExibicao}`;
   icone.loading = "lazy";
   icone.decoding = "async";
 
@@ -184,17 +338,24 @@ function criarCardProduto(produto, localidade) {
   conteudo.className = "conteudo";
   conteudo.appendChild(nome);
 
+  const meta = document.createElement("span");
+  meta.className = "meta";
+  meta.textContent = dominioDestino
+    ? `${t("destinoPrefixo")}: ${dominioDestino} | ${t("linkSeguro")}`
+    : t("linkExternoSeguro");
+  conteudo.appendChild(meta);
+
   if (produto.novo) {
     a.classList.add("link-item--novo");
     const badge = document.createElement("span");
     badge.className = "badge-novo";
-    badge.textContent = "Novo";
+    badge.textContent = t("novo");
     conteudo.appendChild(badge);
   }
 
   const cta = document.createElement("span");
   cta.className = "cta";
-  cta.textContent = "Ver oferta";
+  cta.textContent = t("verOferta");
 
   a.append(icone, conteudo, cta);
   return a;
@@ -206,7 +367,7 @@ function renderizarProdutosPorMes(dados, termoBusca = "") {
   const meses = ordenarMeses(Object.keys(dados));
 
   if (!meses.length) {
-    container.innerHTML = '<p class="vazio">Nenhum produto encontrado no JSON.</p>';
+    container.innerHTML = `<p class="vazio">${t("nenhumNoJson")}</p>`;
     return;
   }
 
@@ -228,7 +389,7 @@ function renderizarProdutosPorMes(dados, termoBusca = "") {
     cabecalho.className = "month-header";
 
     const titulo = document.createElement("h2");
-    titulo.textContent = mes;
+    titulo.textContent = traduzirNomeMes(mes, localidadeUsuario);
 
     const botaoToggle = document.createElement("button");
     botaoToggle.type = "button";
@@ -240,7 +401,7 @@ function renderizarProdutosPorMes(dados, termoBusca = "") {
 
     const iniciarAberto = index === 0;
     lista.hidden = !iniciarAberto;
-    botaoToggle.textContent = iniciarAberto ? "Esconder" : "Mostrar";
+    botaoToggle.textContent = iniciarAberto ? t("esconder") : t("mostrar");
     botaoToggle.setAttribute("aria-expanded", String(iniciarAberto));
     botaoToggle.setAttribute("aria-controls", lista.id);
 
@@ -248,7 +409,7 @@ function renderizarProdutosPorMes(dados, termoBusca = "") {
       const aberto = botaoToggle.getAttribute("aria-expanded") === "true";
       const proximoEstado = !aberto;
       botaoToggle.setAttribute("aria-expanded", String(proximoEstado));
-      botaoToggle.textContent = proximoEstado ? "Esconder" : "Mostrar";
+      botaoToggle.textContent = proximoEstado ? t("esconder") : t("mostrar");
       lista.hidden = !proximoEstado;
     });
 
@@ -263,7 +424,7 @@ function renderizarProdutosPorMes(dados, termoBusca = "") {
     if (!lista.children.length) {
       const vazioMes = document.createElement("p");
       vazioMes.className = "vazio";
-      vazioMes.textContent = "Nenhum produto neste mes.";
+      vazioMes.textContent = t("nenhumProdutoMes");
       lista.appendChild(vazioMes);
     }
 
@@ -273,7 +434,7 @@ function renderizarProdutosPorMes(dados, termoBusca = "") {
   });
 
   if (!container.children.length) {
-    container.innerHTML = '<p class="vazio">Nenhum produto encontrado para essa busca.</p>';
+    container.innerHTML = `<p class="vazio">${t("nenhumBusca")}</p>`;
   }
 }
 
@@ -299,7 +460,7 @@ function adicionarJsonLd(dados) {
   const schema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: "Produtos recomendados e ofertas",
+    name: t("schemaNome"),
     itemListElement: produtos,
   };
 
@@ -322,7 +483,10 @@ function configurarBusca() {
 
 async function carregarProdutos() {
   try {
-    container.innerHTML = '<p class="vazio">Carregando produtos...</p>';
+    const idiomaDestino = determinarIdiomaDestino(localidadeUsuario);
+    await prepararTextosUI(idiomaDestino);
+    await traduzirTextosEstaticosDaPagina(idiomaDestino);
+    container.innerHTML = `<p class="vazio">${t("carregando")}</p>`;
 
     const resposta = await fetch("produtos.json");
 
@@ -331,14 +495,14 @@ async function carregarProdutos() {
     }
 
     const dados = await resposta.json();
-    const idiomaDestino = determinarIdiomaDestino(localidadeUsuario);
     const dadosTraduzidos = await aplicarTraducaoNosProdutos(dados, idiomaDestino);
     dadosProdutosAtuais = dadosTraduzidos;
     renderizarProdutosPorMes(dadosProdutosAtuais, buscaInput?.value || "");
     adicionarJsonLd(dadosProdutosAtuais);
     configurarBusca();
+    atualizarIndicadorAtualizacao(new Date());
   } catch (erro) {
-    container.innerHTML = `<p class="erro">Erro ao carregar produtos: ${erro.message}</p>`;
+    container.innerHTML = `<p class="erro">${t("erroCarregar")}: ${erro.message}</p>`;
   }
 }
 
