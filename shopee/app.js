@@ -1,5 +1,6 @@
 const container = document.getElementById("produtos");
 const buscaInput = document.getElementById("busca-produto");
+const recomendadoDiaEl = document.getElementById("recomendado-dia");
 const contadorAcessosEl = document.getElementById("contador-acessos");
 const agradecimentoVisitaEl = document.getElementById("agradecimento-visita");
 const ultimaAtualizacaoEl = document.getElementById("ultima-atualizacao");
@@ -24,6 +25,8 @@ const TEXTOS_PADRAO_UI = {
   schemaNome: "Produtos recomendados e ofertas",
   contadorAcessosLabel: "Acessos neste dispositivo",
   agradecimentoVisita: "Obrigado pela visita.",
+  recomendadoDiaTitulo: "Recomendado do dia",
+  recomendadoDiaTexto: "Escolha selecionada automaticamente para hoje.",
 };
 let textosUI = { ...TEXTOS_PADRAO_UI };
 let dadosProdutosAtuais = {};
@@ -148,6 +151,47 @@ function atualizarContadorEAgradecimento() {
   if (agradecimentoVisitaEl) {
     agradecimentoVisitaEl.textContent = t("agradecimentoVisita");
   }
+}
+
+function escolherIndiceDiario(total, data = new Date()) {
+  if (!total) return -1;
+  const stamp = data.toISOString().slice(0, 10);
+  let hash = 0;
+  for (let i = 0; i < stamp.length; i += 1) {
+    hash = (hash * 31 + stamp.charCodeAt(i)) >>> 0;
+  }
+  return hash % total;
+}
+
+function renderizarRecomendadoDoDia(dados) {
+  if (!recomendadoDiaEl) return;
+
+  const produtos = [];
+  Object.keys(dados).forEach((mes) => {
+    (dados[mes] || []).forEach((produto) => {
+      if (produto?.nome && produto?.link_afiliado) {
+        produtos.push(produto);
+      }
+    });
+  });
+
+  if (!produtos.length) {
+    recomendadoDiaEl.innerHTML = "";
+    return;
+  }
+
+  const indice = escolherIndiceDiario(produtos.length);
+  const escolhido = produtos[indice];
+  const card = criarCardProduto(escolhido, localidadeUsuario);
+
+  const titulo = document.createElement("h2");
+  titulo.textContent = t("recomendadoDiaTitulo");
+
+  const texto = document.createElement("p");
+  texto.textContent = t("recomendadoDiaTexto");
+
+  recomendadoDiaEl.innerHTML = "";
+  recomendadoDiaEl.append(titulo, texto, card);
 }
 
 async function traduzirTextoTempoReal(texto, idiomaDestino) {
@@ -532,6 +576,7 @@ async function carregarProdutos() {
     const dados = await resposta.json();
     const dadosTraduzidos = await aplicarTraducaoNosProdutos(dados, idiomaDestino);
     dadosProdutosAtuais = dadosTraduzidos;
+    renderizarRecomendadoDoDia(dadosProdutosAtuais);
     renderizarProdutosPorMes(dadosProdutosAtuais, buscaInput?.value || "");
     adicionarJsonLd(dadosProdutosAtuais);
     configurarBusca();

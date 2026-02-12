@@ -109,6 +109,74 @@ body {
   background: #132338;
 }
 
+.ad-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  border-radius: 999px;
+  font-weight: 700;
+  transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ad-link:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.ad-link--hero {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(120deg, #16a34a, #22c55e);
+  color: #052e16;
+  box-shadow: 0 10px 18px rgba(34, 197, 94, 0.25);
+}
+
+.ad-slot {
+  border: 1px solid #2f4b67;
+  background: #102033;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 0 0 18px;
+}
+
+.ad-slot-title {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.ad-slot-text {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.ad-link--block {
+  padding: 9px 14px;
+  background: #1d4ed8;
+  color: #dbeafe;
+}
+
+.daily-reco {
+  border: 1px solid #31557a;
+  background: #0f2236;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 0 0 18px;
+}
+
+.daily-reco h2 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.daily-reco p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 .search-box {
   margin: 0 0 18px;
 }
