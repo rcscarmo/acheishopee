@@ -75,6 +75,15 @@ function t(chave) {
   return textosUI[chave] || TEXTOS_PADRAO_UI[chave] || chave;
 }
 
+function renderizarLoading() {
+  container.innerHTML = `
+    <div class="loading-state" role="status" aria-live="polite">
+      <span class="loading-spinner" aria-hidden="true"></span>
+      <p>${t("carregando")}</p>
+    </div>
+  `;
+}
+
 function carregarCacheTraducao() {
   try {
     const salvo = localStorage.getItem(CACHE_TRADUCAO_CHAVE);
@@ -484,9 +493,10 @@ function configurarBusca() {
 async function carregarProdutos() {
   try {
     const idiomaDestino = determinarIdiomaDestino(localidadeUsuario);
+    renderizarLoading();
     await prepararTextosUI(idiomaDestino);
     await traduzirTextosEstaticosDaPagina(idiomaDestino);
-    container.innerHTML = `<p class="vazio">${t("carregando")}</p>`;
+    renderizarLoading();
 
     const resposta = await fetch("produtos.json");
 

@@ -251,6 +251,34 @@ body {
   font-weight: 600;
 }
 
+.loading-state {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  padding: 18px 12px;
+  color: var(--muted);
+}
+
+.loading-state p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 3px solid #2a415b;
+  border-top-color: var(--accent);
+  animation: spin 0.85s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .seo-text {
   margin-top: 28px;
   border-top: 1px solid #223249;
