@@ -50,9 +50,56 @@ body {
   font-size: 1.7rem;
 }
 
-.hero p {
-  margin: 0;
+.hero-subtitle {
+  margin: 0 auto;
+  max-width: 620px;
   color: var(--muted);
+}
+
+.hero-points {
+  margin: 14px auto 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hero-points li {
+  background: #11283d;
+  border: 1px solid #1f3a57;
+  color: #cde8ff;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 10px;
+}
+
+.search-box {
+  margin: 0 0 18px;
+}
+
+.search-box label {
+  display: block;
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.search-box input {
+  width: 100%;
+  background: #111f30;
+  color: var(--text);
+  border: 1px solid #2a415b;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+}
+
+.search-box input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .month {
@@ -142,6 +189,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
 }
 
 .badge-novo {
@@ -155,11 +203,35 @@ body {
   padding: 4px 8px;
 }
 
+.cta {
+  font-size: 0.8rem;
+  color: #93c5fd;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .erro,
 .vazio {
   margin-top: 12px;
   color: var(--error);
   font-weight: 600;
+}
+
+.seo-text {
+  margin-top: 28px;
+  border-top: 1px solid #223249;
+  padding-top: 18px;
+}
+
+.seo-text h2 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+
+.seo-text p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .toggle-mes:focus-visible,

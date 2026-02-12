@@ -1,6 +1,8 @@
 const container = document.getElementById("produtos");
+const buscaInput = document.getElementById("busca-produto");
 const localidadeUsuario = detectarLocalidadeUsuario();
 const CACHE_TRADUCAO_CHAVE = "cache_traducao_produtos_v1";
+let dadosProdutosAtuais = {};
 const ORDEM_MESES = [
   "janeiro",
   "fevereiro",
@@ -164,12 +166,15 @@ function criarCardProduto(produto, localidade) {
   a.className = "link-item";
   a.href = produto.link_afiliado;
   a.target = "_blank";
-  a.rel = "noopener noreferrer";
+  a.rel = "noopener noreferrer sponsored";
+  a.title = `Ver oferta de ${nomeExibicao}`;
 
   const icone = document.createElement("img");
   icone.className = "icone";
   icone.src = produto.icone || "https://via.placeholder.com/72x72.png?text=%F0%9F%9B%8D%EF%B8%8F";
   icone.alt = `Icone ${nomeExibicao}`;
+  icone.loading = "lazy";
+  icone.decoding = "async";
 
   const nome = document.createElement("span");
   nome.className = "nome";
@@ -187,11 +192,17 @@ function criarCardProduto(produto, localidade) {
     conteudo.appendChild(badge);
   }
 
-  a.append(icone, conteudo);
+  const cta = document.createElement("span");
+  cta.className = "cta";
+  cta.textContent = "Ver oferta";
+
+  a.append(icone, conteudo, cta);
   return a;
 }
 
-function renderizarProdutosPorMes(dados) {
+function renderizarProdutosPorMes(dados, termoBusca = "") {
+  container.innerHTML = "";
+  const termo = termoBusca.trim().toLowerCase();
   const meses = ordenarMeses(Object.keys(dados));
 
   if (!meses.length) {
@@ -200,6 +211,16 @@ function renderizarProdutosPorMes(dados) {
   }
 
   meses.forEach((mes, index) => {
+    const produtosMes = dados[mes] || [];
+    const produtosFiltrados = produtosMes.filter((produto) => {
+      const nomeExibicao = obterNomeExibicao(produto).toLowerCase();
+      return !termo || nomeExibicao.includes(termo);
+    });
+
+    if (!produtosFiltrados.length) {
+      return;
+    }
+
     const secaoMes = document.createElement("section");
     secaoMes.className = "month";
 
@@ -231,7 +252,7 @@ function renderizarProdutosPorMes(dados) {
       lista.hidden = !proximoEstado;
     });
 
-    const produtosOrdenados = ordenarProdutos(dados[mes] || [], localidadeUsuario);
+    const produtosOrdenados = ordenarProdutos(produtosFiltrados, localidadeUsuario);
 
     produtosOrdenados.forEach((produto) => {
       if (produto?.nome && produto?.link_afiliado) {
@@ -250,6 +271,53 @@ function renderizarProdutosPorMes(dados) {
     secaoMes.append(cabecalho, lista);
     container.appendChild(secaoMes);
   });
+
+  if (!container.children.length) {
+    container.innerHTML = '<p class="vazio">Nenhum produto encontrado para essa busca.</p>';
+  }
+}
+
+function adicionarJsonLd(dados) {
+  const produtos = [];
+  Object.keys(dados).forEach((mes) => {
+    (dados[mes] || []).forEach((produto) => {
+      if (!produto?.link_afiliado || !produto?.nome) return;
+      produtos.push({
+        "@type": "ListItem",
+        position: produtos.length + 1,
+        url: produto.link_afiliado,
+        name: obterNomeExibicao(produto),
+        image: produto.icone || undefined,
+      });
+    });
+  });
+
+  if (!produtos.length) {
+    return;
+  }
+
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Produtos recomendados e ofertas",
+    itemListElement: produtos,
+  };
+
+  const antigo = document.getElementById("schema-produtos");
+  if (antigo) antigo.remove();
+
+  const script = document.createElement("script");
+  script.id = "schema-produtos";
+  script.type = "application/ld+json";
+  script.textContent = JSON.stringify(schema);
+  document.head.appendChild(script);
+}
+
+function configurarBusca() {
+  if (!buscaInput) return;
+  buscaInput.addEventListener("input", () => {
+    renderizarProdutosPorMes(dadosProdutosAtuais, buscaInput.value);
+  });
 }
 
 async function carregarProdutos() {
@@ -265,8 +333,10 @@ async function carregarProdutos() {
     const dados = await resposta.json();
     const idiomaDestino = determinarIdiomaDestino(localidadeUsuario);
     const dadosTraduzidos = await aplicarTraducaoNosProdutos(dados, idiomaDestino);
-    container.innerHTML = "";
-    renderizarProdutosPorMes(dadosTraduzidos);
+    dadosProdutosAtuais = dadosTraduzidos;
+    renderizarProdutosPorMes(dadosProdutosAtuais, buscaInput?.value || "");
+    adicionarJsonLd(dadosProdutosAtuais);
+    configurarBusca();
   } catch (erro) {
     container.innerHTML = `<p class="erro">Erro ao carregar produtos: ${erro.message}</p>`;
   }

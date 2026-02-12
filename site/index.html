@@ -3,18 +3,69 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Links de Produtos</title>
+    <title>Achei na Shopee | Ofertas e Produtos Recomendados 2026</title>
+    <meta
+      name="description"
+      content="Encontre produtos úteis, ofertas e achadinhos da Shopee organizados por mês. Compare, clique no link e compre com praticidade."
+    />
+    <meta
+      name="keywords"
+      content="achadinhos shopee, ofertas shopee, produtos recomendados, links afiliados, promoções shopee"
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Achei na Shopee | Ofertas e Produtos Recomendados" />
+    <meta
+      property="og:description"
+      content="Produtos e ofertas organizados por mês para você encontrar mais rápido e comprar melhor."
+    />
+    <meta property="og:image" content="./logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Achei na Shopee | Achadinhos e Ofertas" />
+    <meta
+      name="twitter:description"
+      content="Acesse produtos recomendados com links diretos e encontre ofertas mais rápido."
+    />
     <link rel="stylesheet" href="styles.css" />
     <link rel="shortcut icon" href="./logo.png" type="image/x-icon" />
   </head>
   <body>
     <main class="container">
       <header class="hero">
-        <img class="avatar" src="./logo.png" alt="Avatar" />
-        <h1>Achei na Shopee para você! <sub>2026</sub></h1>
+        <img class="avatar" src="./logo.png" alt="Logo Achei na Shopee" />
+        <h1>Achei na Shopee para você <sub>2026</sub></h1>
+        <p class="hero-subtitle">
+          Achadinhos selecionados para facilitar sua compra: escolha o produto, abra a oferta e aproveite.
+        </p>
+        <ul class="hero-points" aria-label="Benefícios">
+          <li>Produtos organizados por mês</li>
+          <li>Links rápidos para oferta</li>
+          <li>Atualizações frequentes</li>
+        </ul>
       </header>
 
+      <section class="search-box" aria-label="Buscar produtos">
+        <label for="busca-produto">Buscar produto</label>
+        <input
+          id="busca-produto"
+          type="search"
+          name="busca"
+          placeholder="Digite o nome do produto"
+          autocomplete="off"
+        />
+      </section>
+
       <section id="produtos" aria-live="polite"></section>
+
+      <section class="seo-text" aria-labelledby="como-funciona">
+        <h2 id="como-funciona">Como encontrar os melhores produtos</h2>
+        <p>
+          Este catálogo reúne sugestões práticas para casa, viagem, organização e utilidades. A lista é atualizada e
+          organizada para você encontrar o que precisa em menos tempo.
+        </p>
+      </section>
     </main>
     
     <script src="app.js" defer></script>
